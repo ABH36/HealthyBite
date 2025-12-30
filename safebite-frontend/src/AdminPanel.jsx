@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ShieldAlert, CheckCircle, XCircle, Bell, Trash2, Lightbulb, Database, Server } from 'lucide-react'; // Added Database, Server icons
+import { 
+    ArrowLeft, ShieldAlert, CheckCircle, XCircle, Bell, Trash2, 
+    Lightbulb, Database, Server, Package, Plus 
+} from 'lucide-react'; // ✅ Added Package, Plus icons
 import { getDeviceId } from './utils/device'; 
 
 const AdminPanel = () => {
@@ -18,7 +21,7 @@ const AdminPanel = () => {
     const [reports, setReports] = useState([]);
     const [alerts, setAlerts] = useState([]);
     const [backups, setBackups] = useState([]); // 💾 Backup State
-    const [activeTab, setActiveTab] = useState('reports'); 
+    const [activeTab, setActiveTab] = useState('inventory'); // ✅ Default set to Inventory for now
 
     // FORMS STATE
     const [newAlert, setNewAlert] = useState({
@@ -27,6 +30,12 @@ const AdminPanel = () => {
 
     const [card, setCard] = useState({ 
         title: '', poisonName: '', damage: '', tip: '', type: 'did_you_know', language: 'en' 
+    });
+
+    // 📦 NEW PRODUCT STATE (Added this)
+    const [newProduct, setNewProduct] = useState({
+        barcode: '', name: '', brand: '', riskLevel: 'SAFE', 
+        ingredients: '', poisonScore: 0, description: ''
     });
 
     // 🛡️ CONFIG
@@ -101,6 +110,26 @@ const AdminPanel = () => {
 
     // --- ACTIONS ---
 
+    // 🔥 NEW: HANDLE ADD PRODUCT
+    const handleAddProduct = async (e) => {
+        e.preventDefault();
+        if (cooldown) return;
+        setCooldown(true);
+        try {
+            // Using getConfig() to send admin secret headers
+            await axios.post(`${API_URL}/api/products`, newProduct, getConfig());
+            alert(`✅ Product Added: ${newProduct.name}`);
+            setNewProduct({
+                barcode: '', name: '', brand: '', riskLevel: 'SAFE', 
+                ingredients: '', poisonScore: 0, description: ''
+            });
+        } catch (error) {
+            console.error("Add Product Error:", error);
+            alert("Failed to add product.");
+        }
+        setTimeout(() => setCooldown(false), 1000);
+    };
+
     const handleReportAction = async (id, status) => {
         if (cooldown) return;
         setCooldown(true);
@@ -162,6 +191,11 @@ const AdminPanel = () => {
                     </h1>
                 </div>
                 <div className="flex gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0">
+                    {/* ✅ ADDED INVENTORY BUTTON */}
+                    <button onClick={() => setActiveTab('inventory')} className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap flex items-center gap-2 ${activeTab==='inventory' ? 'bg-green-600' : 'bg-gray-700'}`}>
+                        <Package size={14} /> Inventory
+                    </button>
+
                     <button onClick={() => setActiveTab('reports')} className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap ${activeTab==='reports' ? 'bg-blue-600' : 'bg-gray-700'}`}>Reports</button>
                     <button onClick={() => setActiveTab('alerts')} className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap ${activeTab==='alerts' ? 'bg-red-600' : 'bg-gray-700'}`}>Alerts</button>
                     <button onClick={() => setActiveTab('education')} className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap flex items-center gap-2 ${activeTab==='education' ? 'bg-purple-600' : 'bg-gray-700'}`}>
@@ -196,6 +230,58 @@ const AdminPanel = () => {
                         </p>
                     </div>
                 </div>
+
+                {/* --- ✅ NEW TAB: INVENTORY --- */}
+                {activeTab === 'inventory' && (
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in">
+                        {/* ADD FORM */}
+                        <div className="lg:col-span-1 bg-gray-800 p-6 rounded-3xl border border-gray-700 h-fit">
+                            <div className="flex items-center gap-2 mb-6 text-green-500">
+                                <Package size={24} />
+                                <h2 className="text-xl font-bold">Add New Product</h2>
+                            </div>
+                            <form onSubmit={handleAddProduct} className="space-y-4">
+                                <div>
+                                    <label className="text-xs text-gray-400 font-bold ml-1">Barcode</label>
+                                    <input required value={newProduct.barcode} onChange={e=>setNewProduct({...newProduct, barcode: e.target.value})} className="w-full bg-gray-900 p-3 rounded-xl border border-gray-600 focus:border-green-500 text-white outline-none" placeholder="e.g. 890123..." />
+                                </div>
+                                <div>
+                                    <label className="text-xs text-gray-400 font-bold ml-1">Name</label>
+                                    <input required value={newProduct.name} onChange={e=>setNewProduct({...newProduct, name: e.target.value})} className="w-full bg-gray-900 p-3 rounded-xl border border-gray-600 text-white outline-none" placeholder="e.g. Coca Cola" />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="text-xs text-gray-400 font-bold ml-1">Risk</label>
+                                        <select value={newProduct.riskLevel} onChange={e=>setNewProduct({...newProduct, riskLevel: e.target.value})} className="w-full bg-gray-900 p-3 rounded-xl border border-gray-600 text-white outline-none">
+                                            <option value="SAFE">SAFE 🟢</option>
+                                            <option value="MODERATE">MODERATE 🟡</option>
+                                            <option value="HIGH">HIGH 🔴</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="text-xs text-gray-400 font-bold ml-1">Score (0-100)</label>
+                                        <input type="number" value={newProduct.poisonScore} onChange={e=>setNewProduct({...newProduct, poisonScore: e.target.value})} className="w-full bg-gray-900 p-3 rounded-xl border border-gray-600 text-white outline-none" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-xs text-gray-400 font-bold ml-1">Ingredients</label>
+                                    <textarea value={newProduct.ingredients} onChange={e=>setNewProduct({...newProduct, ingredients: e.target.value})} className="w-full bg-gray-900 p-3 rounded-xl border border-gray-600 text-white outline-none h-24" placeholder="Sugar, Water..." />
+                                </div>
+                                <button type="submit" disabled={cooldown} className="w-full bg-green-600 text-white font-bold py-4 rounded-xl hover:bg-green-700 transition-colors flex items-center justify-center gap-2">
+                                    <Plus size={20} /> {cooldown ? 'Adding...' : 'ADD TO DATABASE'}
+                                </button>
+                            </form>
+                        </div>
+                        {/* INSTRUCTIONS */}
+                        <div className="lg:col-span-2 bg-gray-800/50 p-8 rounded-3xl border border-gray-700 border-dashed flex flex-col items-center justify-center text-center">
+                            <Package size={64} className="text-gray-600 mb-4" />
+                            <h3 className="text-xl font-bold text-gray-300">Database Manager</h3>
+                            <p className="text-gray-500 max-w-md mt-2">
+                                Add products here to populate the Live Database. Once added, users can scan them instantly.
+                            </p>
+                        </div>
+                    </div>
+                )}
 
                 {/* --- TAB: REPORTS --- */}
                 {activeTab === 'reports' && (
