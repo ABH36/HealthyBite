@@ -1,8 +1,8 @@
 const fs = require("fs");
 const path = require("path");
 
-const Product = require("../models/Product");
-const User = require("../models/User");
+const Product = require("../models/productModel");
+const User = require("../models/userModel");
 const Report = require("../models/Report");
 const Alert = require("../models/Alert");
 const HealthCard = require("../models/HealthCard");

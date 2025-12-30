@@ -1,5 +1,5 @@
 const Report = require('../models/Report');
-const Product = require('../models/Product');
+const Product = require('../models/productModel');
 const Notification = require('../models/Notification'); // 👈 NEW
 
 // 🔒 SECURITY LAYER

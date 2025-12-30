@@ -1,5 +1,5 @@
-const User = require('../models/User');
-const Product = require('../models/Product');
+const User = require('../models/userModel');
+const Product = require('../models/productModel');
 const { calculateRisk } = require('../utils/riskEngine'); // 👈 IMPORT NEEDED FOR FIX 3
 
 // ... (getUserProfile aur updateHealthProfile waise hi rahenge - Same as before) ...

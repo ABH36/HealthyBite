@@ -1,5 +1,5 @@
 const Alert = require('../models/Alert');
-const User = require('../models/User');
+const User = require('../models/userModel.js');
 import firebaseAdmin from "../firebaseAdmin.js";
 const admin = firebaseAdmin();
 // Import Firebase

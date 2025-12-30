@@ -1,5 +1,5 @@
 const HealthCard = require('../models/HealthCard');
-const Product = require('../models/Product');
+const Product = require('../models/productModel');
 
 // Security Key (Same as Admin Controller)
 const ADMIN_SECRET = process.env.ADMIN_SECRET || "safebite_admin_secure_key_2025";
