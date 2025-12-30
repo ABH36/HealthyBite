@@ -14,6 +14,7 @@ import AdminPanel from './AdminPanel';
 import BottomNav from './BottomNav';
 import TopBar from './TopBar';
 import SplashScreen from './SplashScreen'; 
+import PrivacyPolicy from './PrivacyPolicy'; // 🛡️ New Route for App Compliance
 
 // 🔥 Phase 22: Import Firebase Functions
 import { requestPermission, onMessageListener } from './firebase';
@@ -24,6 +25,7 @@ const haptic = () => { if (navigator.vibrate) navigator.vibrate(15); };
 const Home = () => {
   const navigate = useNavigate();
   const deviceId = getDeviceId();
+  // ✅ Using VITE_API_URL (Synced with Vercel & Render)
   const API_URL = import.meta.env.VITE_API_URL;
   
   // State Management
@@ -45,24 +47,21 @@ const Home = () => {
   // 🔥 2. NOTIFICATION SYSTEM (Phase 22 - Optimized)
   useEffect(() => {
       const syncToken = async () => {
-          // Ask for permission
           const token = await requestPermission();
           
           if (token) {
               console.log("🔔 Permission Granted. Checking Sync Status...");
               
-              // 🛡️ MICRO-UPGRADE: Prevent Spamming Backend
+              // 🛡️ Prevent Spamming Backend
               const isSynced = localStorage.getItem("hb_fcm_synced");
               
               if (!isSynced) {
                   try {
-                      // Send Token to Backend
                       await axios.post(`${API_URL}/api/user/fcm`, {
                           deviceId: deviceId,
                           token: token
                       });
                       console.log("✅ Token Synced with Server!");
-                      // Mark as synced so we don't do it again on refresh
                       localStorage.setItem("hb_fcm_synced", "true");
                   } catch (e) {
                       console.error("Token Sync Failed", e);
@@ -73,10 +72,8 @@ const Home = () => {
           }
       };
 
-      // Run Sync
       syncToken();
 
-      // Listen for Foreground Messages
       onMessageListener().then(payload => {
           if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
           alert(`🚨 ${payload.notification.title}\n${payload.notification.body}`);
@@ -145,7 +142,8 @@ const Home = () => {
   if (loading) return <SplashScreen />;
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 relative bg-brand-bg pt-28 safe-bottom">
+    // ✅ FIX 2: Added 'pb-28' here specifically for Home Page scrolling
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 relative bg-brand-bg pt-28 pb-28 safe-bottom">
       <TopBar currentLang={currentLang} toggleLang={toggleLang} />
 
       {/* ALERTS */}
@@ -267,7 +265,9 @@ const Home = () => {
 // --- MAIN APP ROUTING ---
 function App() {
   return (
-    <div className="min-h-screen bg-brand-bg text-sans">
+    // ✅ FIX 1: GLOBAL FIX - Added 'pb-28' here. 
+    // This pushes ALL content up, so Profile, Result, etc. won't hide behind the Bottom Nav.
+    <div className="min-h-screen bg-brand-bg text-sans pb-28">
         <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/scan" element={<Scanner />} />
@@ -275,6 +275,7 @@ function App() {
         <Route path="/profile" element={<HealthProfile />} />
         <Route path="/library" element={<PoisonLibrary />} />
         <Route path="/admin" element={<AdminPanel />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} /> {/* New Route */}
         </Routes>
 
         <BottomNav />
