@@ -14,27 +14,15 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const messaging = getMessaging(app);
 
-// Ask permission & generate token
 export const requestPermission = async () => {
-  try {
-    const permission = await Notification.requestPermission();
-    if (permission === "granted") {
-      const token = await getToken(messaging, {
-        vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
-      });
-      console.log("🔥 Device Token:", token);
-      return token;
-    } else {
-      console.log("🚫 Permission denied");
-      return null;
-    }
-  } catch (error) {
-    console.error("FCM Token Error:", error);
-    return null;
+  const permission = await Notification.requestPermission();
+  if (permission === "granted") {
+    return await getToken(messaging, {
+      vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
+    });
   }
 };
 
-// Foreground notifications
 export const onMessageListener = () =>
   new Promise((resolve) => {
     onMessage(messaging, (payload) => resolve(payload));
