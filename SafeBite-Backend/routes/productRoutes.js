@@ -1,7 +1,5 @@
-const express = require('express');
-const router = express.Router();
-const { getProductByBarcode, addProduct, searchByIngredient } = require('../controllers/productController');
-
+import express from 'express';
+import { getProductByBarcode, addProduct, searchByIngredient } from '../controllers/productController.js'; // .js extension zaroori hai
 // 🔐 Middleware: STRICT Admin Security Check
 const checkAdmin = (req, res, next) => {
     // 1. Get Secret from Header
@@ -38,4 +36,4 @@ router.get('/:barcode', getProductByBarcode);
 // 3. 📦 Add Product (Admin Only) - SECURED 🔒
 router.post('/', checkAdmin, addProduct);
 
-module.exports = router;
+export default router;

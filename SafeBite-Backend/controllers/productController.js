@@ -1,7 +1,7 @@
-const Product = require('../models/Product');
-const User = require('../models/User');
-const { calculateRisk } = require('../utils/riskEngine');
-const axios = require('axios');
+import Product from '../models/productModel.js';
+import User from '../models/userModel.js'; // Ensure correct casing/path
+import { calculateRisk } from '../utils/riskEngine.js'; // Note the .js extension
+import axios from 'axios';
 
 // Helper Function: Find Better Alternatives
 const findBetterAlternatives = async (category, currentStatus, currentBrand) => {
