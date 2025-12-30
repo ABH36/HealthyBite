@@ -31,7 +31,7 @@ app.use(autoBan);
 app.use(auditLogger);
 
 // ROUTES
-app.use("/api/product", productRoutes);
+app.use("/api/products", productRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/report", reportRoutes);
 app.use("/api/admin", adminRoutes);
