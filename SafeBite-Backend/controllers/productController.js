@@ -147,44 +147,47 @@ const getProductByBarcode = async (req, res) => {
 
 // 👉 UPDATED ADD PRODUCT (ADMIN PANEL SUPPORT)
 const addProduct = async (req, res) => {
-  try {
-    const { barcode, name, ingredients, brand, riskLevel, poisonScore, description } = req.body;
+    try {
+        const { barcode, name, ingredients, brand, riskLevel, poisonScore, description } = req.body;
 
-    if (!barcode || !name) {
-      return res.status(400).json({ message: "Barcode & Name required" });
+        if (!barcode || !name) {
+            return res.status(400).json({ message: "Barcode and Name required." });
+        }
+
+        // SAFETY FIX
+        const ingredientsArray = typeof ingredients === "string"
+            ? ingredients.split(',').map(i => i.trim()).filter(Boolean)
+            : Array.isArray(ingredients) ? ingredients : [];
+
+        const score = Number(poisonScore) || 0;
+
+        const status = ['SAFE','MODERATE','HIGH','GREEN','YELLOW','RED'].includes(riskLevel)
+            ? riskLevel
+            : 'SAFE';
+
+        const product = await Product.create({
+            barcode,
+            name,
+            brand: brand || 'Generic',
+            description,
+            ingredients: ingredientsArray,
+            analysis: {
+                status,
+                totalRiskScore: score,
+                harmfulIngredients: [],
+                isChildSafe: score < 30,
+                cachedAt: new Date()
+            }
+        });
+
+        return res.status(201).json({ success: true, data: product });
+
+    } catch (err) {
+        console.error("❌ ADD PRODUCT CRASH:", err);
+        return res.status(500).json({ message: "DB Error", error: err.message });
     }
-
-    const ingredientArray =
-      typeof ingredients === "string"
-        ? ingredients.split(",").map(i => i.trim())
-        : ingredients || [];
-
-    const SAFE_STATUS = ['GREEN','YELLOW','RED','SAFE','MODERATE','HIGH'].includes(riskLevel)
-      ? riskLevel
-      : 'SAFE';
-
-    const product = await Product.create({
-      barcode,
-      name,
-      brand: brand || "Generic",
-      description,
-      ingredients: ingredientArray,
-      analysis: {
-        status: SAFE_STATUS,
-        totalRiskScore: Number(poisonScore) || 0,
-        harmfulIngredients: [],
-        isChildSafe: SAFE_STATUS === 'SAFE',
-        cachedAt: new Date()
-      }
-    });
-
-    return res.status(201).json({ success: true, data: product });
-
-  } catch (err) {
-    console.error("❌ ADD PRODUCT ERROR:", err.message);
-    return res.status(500).json({ message: err.message });
-  }
 };
+
 
 
 // 🔍 Reverse Search – Poison Library
