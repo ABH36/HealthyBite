@@ -1,11 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Home, Scan, User } from 'lucide-react';
 
 const BottomNav = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 
     // Haptic Feedback Helper
     const navTo = (path) => {
@@ -15,28 +14,9 @@ const BottomNav = () => {
 
     const isActive = (path) => location.pathname === path;
 
-    // 🕵️‍♂️ KEYBOARD DETECTION HOOK (Prevents nav from covering inputs)
-    useEffect(() => {
-        const initialHeight = window.innerHeight;
-        
-        const handleResize = () => {
-            const currentHeight = window.innerHeight;
-            // If height shrinks by > 20%, keyboard is likely open
-            if (currentHeight < initialHeight * 0.8) {
-                setIsKeyboardOpen(true);
-            } else {
-                setIsKeyboardOpen(false);
-            }
-        };
-
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
-
-    // Conditions to HIDE Nav:
-    // 1. Admin Panel
-    // 2. Keyboard is Open
-    if (location.pathname === '/admin' || isKeyboardOpen) return null;
+    // ✅ FIX: Removed Keyboard Detection Hook (It was causing lag/scroll issues)
+    // Only hide on Admin Panel
+    if (location.pathname === '/admin') return null;
 
     return (
         <div className="fixed bottom-6 left-4 right-4 z-50 flex justify-center safe-bottom pointer-events-none transition-opacity duration-300">
@@ -58,7 +38,6 @@ const BottomNav = () => {
                 </button>
 
                 {/* 📸 CENTER: SCAN BUTTON (FLOATING) */}
-                {/* Absolute position se center me rahega */}
                 <div className="absolute left-1/2 -translate-x-1/2 -top-6">
                     <button
                         onClick={() => navTo('/scan')}

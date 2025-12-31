@@ -11,11 +11,12 @@
   padding-top: env(safe-area-inset-top);
 }
 
-/* Prevent text selection so it feels like an App */
+/* ✅ FIX: Removed user-select: none (It was blocking forms) */
 body {
-  -webkit-user-select: none;
-  user-select: none;
   -webkit-tap-highlight-color: transparent;
+  /* Ensure body allows scrolling */
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* Smooth scrolling */
