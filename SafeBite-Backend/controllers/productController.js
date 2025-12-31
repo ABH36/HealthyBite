@@ -147,50 +147,45 @@ const getProductByBarcode = async (req, res) => {
 
 // 👉 UPDATED ADD PRODUCT (ADMIN PANEL SUPPORT)
 const addProduct = async (req, res) => {
-    try {
-        const { barcode, name, ingredients, brand, riskLevel, poisonScore, description } = req.body;
+  try {
+    const { barcode, name, ingredients, brand, riskLevel, poisonScore, description } = req.body;
 
-        if (!barcode || !name) {
-            return res.status(400).json({ message: "Barcode and Name are required." });
-        }
-
-        // 1. Convert Ingredients String to Array (if comma separated)
-        let ingredientsArray = [];
-        if (typeof ingredients === 'string') {
-            ingredientsArray = ingredients.split(',').map(i => i.trim());
-        } else if (Array.isArray(ingredients)) {
-            ingredientsArray = ingredients;
-        }
-
-        // 2. Prepare Analysis Object manually (Override Risk Engine if Admin provides Risk)
-        const analysisData = {
-            status: riskLevel || 'SAFE',  // Admin's decision
-            totalRiskScore: Number(poisonScore) || 0,
-            harmfulIngredients: [], // Can be filled later
-            isChildSafe: (riskLevel === 'SAFE'),
-            cachedAt: new Date()
-        };
-
-        // 3. Save to DB
-        const product = await Product.create({
-            barcode,
-            name,
-            brand: brand || 'Generic',
-            description,
-            ingredients: ingredientsArray,
-            analysis: analysisData // ✅ Fitting into your Advanced Model
-        });
-
-        res.status(201).json({ success: true, data: product, message: "Product Added Manually" });
-
-    } catch (error) {
-        console.error("Add Product Error:", error);
-        if (error.code === 11000) {
-            return res.status(400).json({ message: "Product with this Barcode already exists!" });
-        }
-        res.status(500).json({ message: "Server Error", error: error.message });
+    if (!barcode || !name) {
+      return res.status(400).json({ message: "Barcode & Name required" });
     }
+
+    const ingredientArray =
+      typeof ingredients === "string"
+        ? ingredients.split(",").map(i => i.trim())
+        : ingredients || [];
+
+    const SAFE_STATUS = ['GREEN','YELLOW','RED','SAFE','MODERATE','HIGH'].includes(riskLevel)
+      ? riskLevel
+      : 'SAFE';
+
+    const product = await Product.create({
+      barcode,
+      name,
+      brand: brand || "Generic",
+      description,
+      ingredients: ingredientArray,
+      analysis: {
+        status: SAFE_STATUS,
+        totalRiskScore: Number(poisonScore) || 0,
+        harmfulIngredients: [],
+        isChildSafe: SAFE_STATUS === 'SAFE',
+        cachedAt: new Date()
+      }
+    });
+
+    return res.status(201).json({ success: true, data: product });
+
+  } catch (err) {
+    console.error("❌ ADD PRODUCT ERROR:", err.message);
+    return res.status(500).json({ message: err.message });
+  }
 };
+
 
 // 🔍 Reverse Search – Poison Library
 const searchByIngredient = async (req, res) => {
