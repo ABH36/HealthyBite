@@ -1,4 +1,4 @@
-const User = require('../models/User');
+const User = require("../models/userModel")
 const Product = require('../models/productModel');
 const { calculateRisk } = require('../utils/riskEngine'); // 👈 IMPORT NEEDED FOR FIX 3
 
