@@ -154,8 +154,7 @@ const Result = () => {
 
     return (
         // ✅ Main Container Safe Padding
-        <div className="min-h-screen bg-white pb-32 relative safe-bottom">
-            
+        <div className="w-full bg-white relative min-h-full pt-20">
             {/* --- HEADER --- */}
             <div className={`relative ${theme.bg} pb-10 rounded-b-[3rem] shadow-sm border-b ${theme.border}`}>
                 <div className="p-4 flex items-center justify-between safe-top">

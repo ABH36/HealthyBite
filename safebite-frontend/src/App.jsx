@@ -22,6 +22,7 @@ import { requestPermission, onMessageListener } from './firebase';
 // Helper
 const haptic = () => { if (navigator.vibrate) navigator.vibrate(15); };
 
+// --- 🏠 HOME COMPONENT (INTERNAL) ---
 const Home = () => {
   const navigate = useNavigate();
   const deviceId = getDeviceId();
@@ -131,8 +132,8 @@ const Home = () => {
   if (loading) return <SplashScreen />;
 
   return (
-    // ✅ FIX: Removed 'pb-28' to avoid double padding (handled globally in App)
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 relative bg-brand-bg pt-28 safe-bottom">
+    // ✅ FIX 1: Removed 'min-h-screen' & 'safe-bottom'. Replaced with 'w-full' so it fits in App scroll.
+    <div className="w-full flex flex-col items-center justify-center p-4 relative bg-brand-bg pt-28 pb-10">
       <TopBar currentLang={currentLang} toggleLang={toggleLang} />
 
       {/* ALERTS */}
@@ -251,7 +252,7 @@ const Home = () => {
   );
 };
 
-// --- MAIN APP ROUTING ---
+// --- MAIN APP ROUTING (WITH SCROLL FIX) ---
 function App() {
   const location = useLocation();
 
@@ -259,18 +260,24 @@ function App() {
   const isScanPage = location.pathname === '/scan';
 
   return (
-    <div className={`min-h-screen bg-brand-bg text-sans ${isScanPage ? '' : 'pb-32'}`}>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/scan" element={<Scanner />} />
-          <Route path="/result" element={<Result />} />
-          <Route path="/profile" element={<HealthProfile />} />
-          <Route path="/library" element={<PoisonLibrary />} />
-          <Route path="/admin" element={<AdminPanel />} />
-          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-        </Routes>
+    // ✅ FIX 2: MASTER SCROLL CONTAINER
+    // This locks the body (fixed inset-0) and makes ONLY the inner div scrollable.
+    <div className="fixed inset-0 bg-brand-bg text-sans overflow-hidden flex flex-col">
+        
+        {/* Scrollable Area */}
+        <div className={`flex-1 w-full overflow-y-auto overflow-x-hidden ${isScanPage ? '' : 'pb-36'}`}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/scan" element={<Scanner />} />
+              <Route path="/result" element={<Result />} />
+              <Route path="/profile" element={<HealthProfile />} />
+              <Route path="/library" element={<PoisonLibrary />} />
+              <Route path="/admin" element={<AdminPanel />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            </Routes>
+        </div>
 
-        {/* 🧠 Logic: Hide BottomNav on Scan Page */}
+        {/* Bottom Nav (Fixed outside scroll area) */}
         {!isScanPage && <BottomNav />}
     </div>
   );

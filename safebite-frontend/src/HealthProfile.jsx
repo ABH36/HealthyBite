@@ -80,7 +80,7 @@ const HealthProfile = () => {
     return (
         // ✅ CRITICAL FIX: Changed pb-10 to pb-32 (128px padding)
         // This ensures the Save button is visible ABOVE the floating scanner bar.
-        <div className="min-h-screen bg-gray-50 pb-32">
+        <div className="w-full bg-gray-50 min-h-full pt-24 px-4">
             
             {/* Header */}
             <div className="bg-white p-4 shadow-sm flex items-center gap-4 sticky top-0 z-10">

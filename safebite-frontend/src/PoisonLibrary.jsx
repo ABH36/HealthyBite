@@ -36,7 +36,7 @@ const PoisonLibrary = () => {
 
   return (
     // ✅ FIX 2: Removed internal padding bottom to rely on Global App Padding
-    <div className="min-h-screen bg-gray-50">
+    <div className="w-full bg-gray-50 min-h-full pt-20">
       
       {/* ✅ FIX 3: Added 'safe-top' for iPhone Notch safety */}
       <div className="bg-white p-4 shadow-sm flex items-center gap-4 sticky top-0 z-10 safe-top">
