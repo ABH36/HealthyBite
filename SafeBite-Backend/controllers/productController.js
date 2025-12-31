@@ -13,31 +13,45 @@ const findBetterAlternatives = async (category, currentStatus, currentBrand) => 
     }).limit(3).select('name brand image analysis.totalRiskScore category');
 };
 
+// ---------------------------------------------
+// 1. GET PRODUCT BY BARCODE (Public + Smart Search)
+// ---------------------------------------------
 const getProductByBarcode = async (req, res) => {
     const { barcode } = req.params;
-    const deviceId = req.headers['x-device-id']; // Frontend will send this
+    const deviceId = req.headers['x-device-id']; // Frontend sends this
 
     try {
+        // Basic Validation
         if (!/^[0-9]{8,14}$/.test(barcode)) {
              return res.status(400).json({ message: "Invalid barcode format." });
         }
 
-        // 1. FETCH USER PROFILE
+        // 1. FETCH USER PROFILE (For Personalization)
         let userProfile = null;
         if (deviceId) {
             userProfile = await User.findOne({ deviceId });
             console.log(`👤 Personalizing for: ${userProfile ? userProfile.name : 'Guest'}`);
         }
 
-        let product = await Product.findOne({ barcode });
+        // 🔥 FIX: SMART QUERY (Checks String, Number & Trimmed versions)
+        const cleanBarcode = barcode.trim();
+        
+        let product = await Product.findOne({
+            $or: [
+                { barcode: cleanBarcode },           // As String "890..."
+                { barcode: Number(cleanBarcode) }    // As Number 890...
+            ]
+        });
+
         let alternatives = [];
 
         // -----------------------
-        // SCENARIO 1: LOCAL DB
+        // SCENARIO 1: LOCAL DB MATCH
         // -----------------------
         if (product) {
-            // Local DB se jo mila wo STANDARD data hai.
-            // Ab hum RUNTIME par user ke liye RISK calculate karenge.
+            console.log("✅ Local DB Hit:", product.name);
+
+            // Calculate Risk Runtime
             const personalizedAnalysis = await calculateRisk(product.ingredients, userProfile);
 
             alternatives = await findBetterAlternatives(
@@ -46,17 +60,16 @@ const getProductByBarcode = async (req, res) => {
                 product.brand 
             );
 
-            // Fallback
+            // Fallback Alternatives
             if (alternatives.length === 0 && personalizedAnalysis.status !== 'GREEN') {
                 alternatives = await Product.find({ 'analysis.status': 'GREEN' })
                     .limit(3)
                     .select('name brand image analysis.totalRiskScore category');
             }
 
-            // DO NOT SAVE personalizedAnalysis to DB.
-            // Just send it in response.
+            // Send Response (Override analysis with personalized one)
             const responseData = product.toObject();
-            responseData.analysis = personalizedAnalysis; // 👈 Override ONLY for this response
+            responseData.analysis = personalizedAnalysis; 
 
             return res.json({
                 success: true,
@@ -67,7 +80,7 @@ const getProductByBarcode = async (req, res) => {
         }
 
         // -----------------------
-        // SCENARIO 2: EXTERNAL API
+        // SCENARIO 2: EXTERNAL API (OpenFoodFacts)
         // -----------------------
         console.log(`Searching OpenFoodFacts for: ${barcode}...`);
         const externalUrl = `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`;
@@ -92,17 +105,21 @@ const getProductByBarcode = async (req, res) => {
                 mainCategory = externalData.categories.split(',')[0].trim();
             }
 
-            const ingredientsArray = ingredientsText.replace(/[()]/g, '').split(',').map(i => i.trim());
+            // 🛡️ CRITICAL FIX: Safe Split & Filter (Prevents Crash on empty strings)
+            const ingredientsArray = (ingredientsText || "")
+                .replace(/[()]/g, '')
+                .split(',')
+                .map(i => i.trim())
+                .filter(Boolean); // Removes empty strings like ""
             
-            // 🔒 CRITICAL FIX: Two Calculations
-            // 1. Standard (For Database) - No User Profile
+            // 1. Standard Analysis (For Database)
             const standardAnalysis = await calculateRisk(ingredientsArray, null);
             standardAnalysis.cachedAt = new Date();
 
-            // 2. Personalized (For User Response) - With User Profile
+            // 2. Personalized Analysis (For User Response)
             const personalizedAnalysis = await calculateRisk(ingredientsArray, userProfile);
 
-            // 💾 SAVE STANDARD DATA ONLY
+            // 💾 SAVE STANDARD DATA TO DB
             const newProduct = await Product.create({
                 barcode: barcode,
                 name: externalData.product_name || "Unknown Product",
@@ -110,7 +127,7 @@ const getProductByBarcode = async (req, res) => {
                 image: externalData.image_url,
                 category: mainCategory,
                 ingredients: ingredientsArray,
-                analysis: standardAnalysis // 👈 Saving Standard Analysis
+                analysis: standardAnalysis 
             });
 
             alternatives = await findBetterAlternatives(
@@ -127,7 +144,7 @@ const getProductByBarcode = async (req, res) => {
 
             // Return Personalized Data
             const responseData = newProduct.toObject();
-            responseData.analysis = personalizedAnalysis; // 👈 Sending Personalized Analysis
+            responseData.analysis = personalizedAnalysis; 
 
             return res.json({
                 success: true,
@@ -145,7 +162,9 @@ const getProductByBarcode = async (req, res) => {
     }
 };
 
-// 👉 UPDATED ADD PRODUCT (ADMIN PANEL SUPPORT)
+// ---------------------------------------------
+// 2. ADD PRODUCT (ADMIN PANEL SUPPORT)
+// ---------------------------------------------
 const addProduct = async (req, res) => {
     try {
         const { barcode, name, ingredients, brand, riskLevel, poisonScore, description } = req.body;
@@ -154,13 +173,14 @@ const addProduct = async (req, res) => {
             return res.status(400).json({ message: "Barcode and Name required." });
         }
 
-        // SAFETY FIX
+        // SAFETY FIX: Ensure ingredients is an array
         const ingredientsArray = typeof ingredients === "string"
             ? ingredients.split(',').map(i => i.trim()).filter(Boolean)
             : Array.isArray(ingredients) ? ingredients : [];
 
         const score = Number(poisonScore) || 0;
 
+        // Valid Status Check
         const status = ['SAFE','MODERATE','HIGH','GREEN','YELLOW','RED'].includes(riskLevel)
             ? riskLevel
             : 'SAFE';
@@ -188,9 +208,9 @@ const addProduct = async (req, res) => {
     }
 };
 
-
-
-// 🔍 Reverse Search – Poison Library
+// ---------------------------------------------
+// 3. SEARCH BY INGREDIENT (Poison Library)
+// ---------------------------------------------
 const searchByIngredient = async (req, res) => {
     try {
         const { query } = req.query;
