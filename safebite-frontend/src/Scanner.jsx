@@ -16,6 +16,7 @@ const Scanner = () => {
     const deviceId = getDeviceId();
 
     useEffect(() => {
+        // 🔧 FIX: Scanner Config for better Mobile Performance
         const scanner = new Html5QrcodeScanner(
             "reader",
             { 
@@ -23,6 +24,8 @@ const Scanner = () => {
                 qrbox: { width: 250, height: 250 },
                 aspectRatio: 1.0,
                 disableFlip: false,
+                // Supported Formats reduce errors
+                supportedScanTypes: [0, 1] // 0=QR, 1=BARCODE
             },
             false
         );
@@ -30,7 +33,7 @@ const Scanner = () => {
         scanner.render(onScanSuccess, onScanFailure);
 
         function onScanFailure(error) {
-            // console.warn(error); // Silent failure is fine for scanning
+            // console.warn(error); // Silent failure is fine
         }
 
         async function onScanSuccess(decodedText, decodedResult) {
@@ -38,7 +41,7 @@ const Scanner = () => {
             setScanResult(decodedText);
             setLoading(true);
             
-            // Haptic Feedback on Scan
+            // Haptic Feedback
             if (navigator.vibrate) navigator.vibrate(50);
 
             try {
@@ -47,24 +50,21 @@ const Scanner = () => {
                 
                 const productData = response.data.data;
 
-                // 💾 2. SMART MEMORY ENGINE (Retention Fix)
-                // Save this scan to localStorage so Home page can show it
+                // 2. SMART MEMORY ENGINE
                 const historyItem = {
                     barcode: decodedText,
                     name: productData.name,
                     brand: productData.brand,
-                    status: productData.analysis.status, // RED, GREEN, YELLOW
+                    status: productData.analysis.status,
                     image: productData.image,
-                    // Save full data to avoid re-fetching on click
                     fullData: productData 
                 };
 
-                // Logic: Get existing -> Remove duplicate if exists -> Add new to top -> Keep only 5
                 const existing = JSON.parse(localStorage.getItem('safebite_history') || '[]');
                 const newHistory = [historyItem, ...existing.filter(i => i.barcode !== decodedText)].slice(0, 5);
                 localStorage.setItem('safebite_history', JSON.stringify(newHistory));
 
-                // 3. Navigate to Result
+                // 3. Navigate
                 navigate('/result', { 
                     state: { 
                         product: productData, 
@@ -75,7 +75,6 @@ const Scanner = () => {
 
             } catch (err) {
                 console.error(err);
-                // If product not found, go to result anyway (Result.jsx handles the "Not Found" state)
                 navigate('/result', { state: { product: null, barcode: decodedText } });
             } finally {
                 setLoading(false);
@@ -83,11 +82,11 @@ const Scanner = () => {
         }
 
         return () => {
-            scanner.clear().catch(error => console.error("Failed to clear scanner", error));
+            scanner.clear().catch(error => console.error("Scanner clear error", error));
         };
     }, [navigate, API_URL, deviceId]);
 
-    // Manual Barcode Submit
+    // Manual Submit
     const handleManualSubmit = async (e) => {
         e.preventDefault();
         if (!manualCode) return;
@@ -98,7 +97,6 @@ const Scanner = () => {
             const response = await axios.get(`${API_URL}/api/product/${manualCode}?deviceId=${deviceId}`);
             const productData = response.data.data;
 
-            // 💾 Save Manual Search too
             const historyItem = {
                 barcode: manualCode,
                 name: productData.name,
@@ -126,12 +124,13 @@ const Scanner = () => {
     };
 
     return (
-        <div className="min-h-screen bg-black flex flex-col items-center justify-center relative p-4 safe-bottom">
+        // ✅ FIX 1: 'overflow-y-auto' added to handle small screens when keyboard opens
+        <div className="min-h-screen bg-black flex flex-col items-center justify-center relative p-4 pb-32 overflow-y-auto">
             
-            {/* Back Button */}
+            {/* ✅ FIX 2: 'top-12' (48px) ensures Back Button is below iPhone Notch */}
             <button 
                 onClick={() => navigate('/')} 
-                className="absolute top-6 left-6 z-50 bg-white/20 backdrop-blur-md p-3 rounded-full text-white hover:bg-white/30 transition-all active:scale-95 safe-top"
+                className="absolute top-12 left-6 z-50 bg-white/20 backdrop-blur-md p-3 rounded-full text-white hover:bg-white/30 transition-all active:scale-95 shadow-lg"
             >
                 <ArrowLeft size={24} />
             </button>
@@ -145,7 +144,7 @@ const Scanner = () => {
                     </div>
                 )}
                 
-                <div id="reader" className="w-full h-full"></div>
+                <div id="reader" className="w-full h-full bg-black"></div>
                 
                 <div className="p-6 text-center bg-white">
                     <h2 className="text-xl font-bold text-gray-800 mb-2">Scan Barcode</h2>
@@ -158,10 +157,13 @@ const Scanner = () => {
                     </div>
 
                     <form onSubmit={handleManualSubmit} className="flex gap-2">
+                        {/* ✅ FIX 3: inputMode="numeric" opens Number Pad on mobile */}
                         <input 
                             type="text" 
+                            inputMode="numeric" 
+                            pattern="[0-9]*"
                             placeholder="Enter barcode manually" 
-                            className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-brand-green transition-all"
+                            className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-brand-green transition-all font-mono tracking-widest"
                             value={manualCode}
                             onChange={(e) => setManualCode(e.target.value)}
                         />

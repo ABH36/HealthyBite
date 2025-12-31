@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { ArrowLeft, User, Activity, AlertCircle, Save } from 'lucide-react';
-import { getDeviceId } from './utils/device';
+import { getDeviceId } from './utils/device'; // Ensure path is correct based on your folder structure
 
 const HealthProfile = () => {
     const navigate = useNavigate();
@@ -11,7 +11,7 @@ const HealthProfile = () => {
 
     const [formData, setFormData] = useState({
         name: '',
-        age: '', // React Input needs string/empty initially, handled as Number in onChange
+        age: '', 
         gender: 'Male',
         conditions: [],
         allergens: []
@@ -19,7 +19,6 @@ const HealthProfile = () => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
 
-    // 🔧 TODO: Load from backend in Phase-11 (Doctor/Admin Rules)
     const conditionsList = ['Diabetes', 'Hypertension', 'Heart Disease', 'Kidney Issue', 'High Cholesterol'];
     const allergensList = ['Peanuts', 'Dairy', 'Gluten', 'Soy', 'Shellfish'];
 
@@ -50,9 +49,9 @@ const HealthProfile = () => {
         setFormData(prev => {
             const list = prev[listType];
             if (list.includes(item)) {
-                return { ...prev, [listType]: list.filter(i => i !== item) }; // Remove
+                return { ...prev, [listType]: list.filter(i => i !== item) }; 
             } else {
-                return { ...prev, [listType]: [...list, item] }; // Add
+                return { ...prev, [listType]: [...list, item] }; 
             }
         });
     };
@@ -65,7 +64,7 @@ const HealthProfile = () => {
             await axios.put(`${API_URL}/api/user/update`, {
                 deviceId,
                 ...formData,
-                age: Number(formData.age) // 🔒 Ensure Backend gets a Number
+                age: Number(formData.age) 
             });
             alert("Health Profile Saved!");
             navigate('/');
@@ -79,9 +78,12 @@ const HealthProfile = () => {
     if (loading) return <div className="p-10 text-center">Loading Profile...</div>;
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-10">
+        // ✅ CRITICAL FIX: Changed pb-10 to pb-32 (128px padding)
+        // This ensures the Save button is visible ABOVE the floating scanner bar.
+        <div className="min-h-screen bg-gray-50 pb-32">
+            
             {/* Header */}
-            <div className="bg-white p-4 shadow-sm flex items-center gap-4">
+            <div className="bg-white p-4 shadow-sm flex items-center gap-4 sticky top-0 z-10">
                 <button onClick={() => navigate('/')} className="p-2 rounded-full hover:bg-gray-100">
                     <ArrowLeft size={24} className="text-gray-700" />
                 </button>
@@ -114,7 +116,6 @@ const HealthProfile = () => {
                             <input 
                                 type="number" 
                                 value={formData.age}
-                                // 🔧 FIX: Handle Number conversion immediately for state sync
                                 onChange={(e) => setFormData({...formData, age: e.target.value})}
                                 className="w-full mt-1 p-3 bg-gray-50 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
                                 placeholder="25"

@@ -43,7 +43,6 @@ const Result = () => {
 
             setIsReportingMissing(true);
             try {
-                // 🔧 FIX 1: Correct API Endpoint (/api/report)
                 await axios.post(`${API_URL}/api/report`, { 
                     deviceId, 
                     barcode: barcode || 'UNKNOWN',
@@ -51,9 +50,7 @@ const Result = () => {
                     description: 'MISSING PRODUCT: User scanned this barcode and found no data. Please add it.'
                 });
                 
-                // Set Throttle Timestamp
                 localStorage.setItem('last_missing_report', Date.now());
-
                 alert(lang === 'hi' ? "धन्यवाद! रिक्वेस्ट भेज दी गई है।" : "Thanks! Request sent to Admin.");
             } catch (error) {
                 alert("Failed to send request.");
@@ -80,7 +77,6 @@ const Result = () => {
                     {lang === 'hi' ? 'फिर से स्कैन करें' : 'Scan Another Product'}
                 </button>
 
-                {/* CROWDSOURCE LINK */}
                 <button 
                     onClick={handleMissingReport}
                     disabled={isReportingMissing}
@@ -115,22 +111,34 @@ const Result = () => {
         } catch (error) { alert("Failed to log."); }
     };
 
-    // 📢 FIX 2: VIRAL WHATSAPP SHARE LOOP
-    const handleShare = () => {
+    // 📢 FIX 2: NATIVE MOBILE SHARE (Better than just WhatsApp)
+    const handleShare = async () => {
         const mood = status === 'RED' ? '🚨 WARNING!' : status === 'GREEN' ? '✅ SAFE!' : '⚠️ MODERATE RISK!';
-        const link = 'https://safebite.app'; // Placeholder domain
-
+        const link = 'https://safebite.app'; 
         const text = `🛡️ *SafeBite Alert*\n\n${mood}\nProduct: *${name}*\nResult: *${theme.label}*\n\nCheck what you eat before you regret it.\nScan on SafeBite 👇\n${link}`;
-        
-        const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
-        window.open(url, '_blank');
+
+        // Try Native Share First (Android/iOS System Share)
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: 'SafeBite Alert',
+                    text: text,
+                    url: link,
+                });
+            } catch (err) {
+                console.log('Error sharing:', err);
+            }
+        } else {
+            // Fallback to WhatsApp
+            const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+            window.open(url, '_blank');
+        }
     };
 
     // Report Modal Logic
     const submitReport = async () => {
         setIsSubmitting(true);
         try {
-            // 🔧 FIX 1: Correct API Endpoint
             await axios.post(`${API_URL}/api/report`, {
                 deviceId,
                 barcode: product.barcode,
@@ -145,6 +153,7 @@ const Result = () => {
     };
 
     return (
+        // ✅ Main Container Safe Padding
         <div className="min-h-screen bg-white pb-32 relative safe-bottom">
             
             {/* --- HEADER --- */}
@@ -172,20 +181,20 @@ const Result = () => {
                         <button 
                             onClick={handleLog}
                             disabled={logAdded}
-                            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold shadow-sm transition-all active:scale-95 ${
+                            className={`flex-1 min-w-0 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold shadow-sm transition-all active:scale-95 ${
                                 logAdded ? 'bg-green-100 text-green-700' : 'bg-black text-white hover:bg-gray-800'
                             }`}
                         >
-                            {logAdded ? <Check size={18} /> : <Plus size={18} />}
-                            {logAdded ? t.addedLog : t.iAteThis}
+                            {logAdded ? <Check size={18} className="shrink-0" /> : <Plus size={18} className="shrink-0" />}
+                            <span className="truncate">{logAdded ? t.addedLog : t.iAteThis}</span>
                         </button>
 
                         <button 
                             onClick={handleShare}
-                            className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-bold shadow-sm bg-green-500 text-white hover:bg-green-600 transition-all active:scale-95"
+                            className="flex-1 min-w-0 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold shadow-sm bg-green-500 text-white hover:bg-green-600 transition-all active:scale-95"
                         >
-                            <Share2 size={20} />
-                            Share
+                            <Share2 size={20} className="shrink-0" />
+                            <span className="truncate">Share</span>
                         </button>
                     </div>
                 </div>
@@ -291,10 +300,10 @@ const Result = () => {
                 </p>
             </div>
 
-            {/* REPORT MODAL */}
+            {/* REPORT MODAL (FIXED FOR MOBILE KEYBOARD) */}
             {showReportModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-                    <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in overflow-y-auto">
+                    <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl relative">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="font-bold text-lg flex items-center gap-2"><Flag size={20} className="text-red-500"/> Report Issue</h3>
                             <button onClick={() => setShowReportModal(false)} className="bg-gray-100 p-1 rounded-full"><X size={20}/></button>

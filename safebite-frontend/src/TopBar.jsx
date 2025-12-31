@@ -6,7 +6,9 @@ const TopBar = ({ currentLang, toggleLang }) => {
     const navigate = useNavigate();
 
     return (
-        <div className="fixed top-0 left-0 right-0 z-40 flex justify-center px-4 pt-4 pointer-events-none">
+        // ✅ FIX: Added 'safe-top' class to prevent overlap with iPhone Notch/Status Bar
+        <div className="fixed top-0 left-0 right-0 z-40 flex justify-center px-4 pt-4 safe-top pointer-events-none">
+            
             {/* GLASS BAR CONTAINER */}
             <div className="pointer-events-auto w-full max-w-md bg-white/80 backdrop-blur-md border border-white/40 shadow-sm rounded-2xl flex items-center justify-between p-3 transition-all duration-300 hover:shadow-md hover:bg-white/90">
                 
@@ -34,7 +36,8 @@ const TopBar = ({ currentLang, toggleLang }) => {
                         className="bg-gray-50 hover:bg-gray-100 text-gray-700 p-2 rounded-xl transition-all active:scale-95 flex items-center gap-1 border border-gray-100"
                     >
                         <Languages size={18} />
-                        <span className="text-xs font-bold hidden sm:inline">{currentLang === 'en' ? 'EN' : 'HI'}</span>
+                        {/* ✅ FIX: Removed 'hidden sm:inline' so mobile users can also see which language is active */}
+                        <span className="text-xs font-bold">{currentLang === 'en' ? 'EN' : 'HI'}</span>
                     </button>
 
                     {/* Profile Button */}

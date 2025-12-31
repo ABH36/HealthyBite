@@ -6,7 +6,10 @@ const PrivacyPolicy = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-brand-bg p-6 pb-32">
+    // ✅ FIX 1: Removed 'pb-32' (Handled by App.js)
+    // ✅ FIX 2: Added 'safe-top' so Back button doesn't hit iPhone Notch
+    <div className="min-h-screen bg-brand-bg p-6 safe-top">
+      
       {/* Back Button */}
       <button 
         onClick={() => navigate(-1)} 

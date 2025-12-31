@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { Scan, Search, Activity, Bell, AlertTriangle, Info, Download, Trash2, Clock } from 'lucide-react';
 import { getDeviceId } from './utils/device';
@@ -14,7 +14,7 @@ import AdminPanel from './AdminPanel';
 import BottomNav from './BottomNav';
 import TopBar from './TopBar';
 import SplashScreen from './SplashScreen'; 
-import PrivacyPolicy from './PrivacyPolicy'; // 🛡️ New Route for App Compliance
+import PrivacyPolicy from './PrivacyPolicy'; 
 
 // 🔥 Phase 22: Import Firebase Functions
 import { requestPermission, onMessageListener } from './firebase';
@@ -25,17 +25,13 @@ const haptic = () => { if (navigator.vibrate) navigator.vibrate(15); };
 const Home = () => {
   const navigate = useNavigate();
   const deviceId = getDeviceId();
-  // ✅ Using VITE_API_URL (Synced with Vercel & Render)
   const API_URL = import.meta.env.VITE_API_URL;
   
-  // State Management
   const [todayScore, setTodayScore] = useState(0);
   const [currentLang, setCurrentLang] = useState(getLanguage());
   const [alerts, setAlerts] = useState([]);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [history, setHistory] = useState([]);
-
-  // 🎬 SPLASH SCREEN STATE
   const [loading, setLoading] = useState(true);
 
   // 🎬 1. SPLASH EFFECT
@@ -44,15 +40,12 @@ const Home = () => {
       return () => clearTimeout(timer);
   }, []);
 
-  // 🔥 2. NOTIFICATION SYSTEM (Phase 22 - Optimized)
+  // 🔥 2. NOTIFICATION SYSTEM
   useEffect(() => {
       const syncToken = async () => {
           const token = await requestPermission();
           
           if (token) {
-              console.log("🔔 Permission Granted. Checking Sync Status...");
-              
-              // 🛡️ Prevent Spamming Backend
               const isSynced = localStorage.getItem("hb_fcm_synced");
               
               if (!isSynced) {
@@ -61,13 +54,10 @@ const Home = () => {
                           deviceId: deviceId,
                           token: token
                       });
-                      console.log("✅ Token Synced with Server!");
                       localStorage.setItem("hb_fcm_synced", "true");
                   } catch (e) {
                       console.error("Token Sync Failed", e);
                   }
-              } else {
-                  console.log("⚡ Token already synced. Skipping.");
               }
           }
       };
@@ -82,7 +72,6 @@ const Home = () => {
   }, [API_URL, deviceId]);
 
 
-  // 🇮🇳 Language Toggle
   const toggleLang = () => {
       haptic();
       const newLang = currentLang === 'en' ? 'hi' : 'en';
@@ -142,8 +131,8 @@ const Home = () => {
   if (loading) return <SplashScreen />;
 
   return (
-    // ✅ FIX 2: Added 'pb-28' here specifically for Home Page scrolling
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 relative bg-brand-bg pt-28 pb-28 safe-bottom">
+    // ✅ FIX: Removed 'pb-28' to avoid double padding (handled globally in App)
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 relative bg-brand-bg pt-28 safe-bottom">
       <TopBar currentLang={currentLang} toggleLang={toggleLang} />
 
       {/* ALERTS */}
@@ -209,7 +198,7 @@ const Home = () => {
                   {history.map((item, idx) => (
                       <div key={idx} onClick={() => openHistory(item)} className="snap-start flex-shrink-0 w-20 flex flex-col items-center gap-2 cursor-pointer group">
                           <div className={`w-16 h-16 rounded-2xl p-0.5 border-2 shadow-sm transition-transform group-active:scale-95 ${item.status === 'RED' ? 'border-red-500' : item.status === 'GREEN' ? 'border-brand-green' : 'border-yellow-500'}`}>
-                              <img src={item.image || "https://placehold.co/50"} className="w-full h-full object-cover rounded-[14px]" />
+                              <img src={item.image || "https://placehold.co/50"} className="w-full h-full object-cover rounded-[14px]" alt="Product" />
                           </div>
                           <p className="text-[10px] font-bold text-gray-600 truncate w-full text-center leading-tight">
                               {item.name ? item.name.split(' ')[0] : 'Unknown'}
@@ -221,7 +210,7 @@ const Home = () => {
       )}
 
       {/* BUTTONS */}
-      <div className="w-full max-w-md space-y-4 px-2 pb-32">
+      <div className="w-full max-w-md space-y-4 px-2">
         <button onClick={() => navTo('/scan')} className="w-full bg-brand-dark text-white font-bold py-6 px-6 rounded-3xl shadow-2xl flex items-center justify-between group transition-all transform hover:scale-[1.02] active:scale-95">
           <div className="flex items-center gap-4">
               <div className="bg-gray-800 p-3 rounded-2xl group-hover:bg-gray-700 transition-colors">
@@ -264,21 +253,25 @@ const Home = () => {
 
 // --- MAIN APP ROUTING ---
 function App() {
+  const location = useLocation();
+
+  // 🧠 Logic: Don't show padding on Scan page (it needs full screen)
+  const isScanPage = location.pathname === '/scan';
+
   return (
-    // ✅ FIX 1: GLOBAL FIX - Added 'pb-28' here. 
-    // This pushes ALL content up, so Profile, Result, etc. won't hide behind the Bottom Nav.
-    <div className="min-h-screen bg-brand-bg text-sans pb-28">
+    <div className={`min-h-screen bg-brand-bg text-sans ${isScanPage ? '' : 'pb-32'}`}>
         <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/scan" element={<Scanner />} />
-        <Route path="/result" element={<Result />} />
-        <Route path="/profile" element={<HealthProfile />} />
-        <Route path="/library" element={<PoisonLibrary />} />
-        <Route path="/admin" element={<AdminPanel />} />
-        <Route path="/privacy-policy" element={<PrivacyPolicy />} /> {/* New Route */}
+          <Route path="/" element={<Home />} />
+          <Route path="/scan" element={<Scanner />} />
+          <Route path="/result" element={<Result />} />
+          <Route path="/profile" element={<HealthProfile />} />
+          <Route path="/library" element={<PoisonLibrary />} />
+          <Route path="/admin" element={<AdminPanel />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         </Routes>
 
-        <BottomNav />
+        {/* 🧠 Logic: Hide BottomNav on Scan Page */}
+        {!isScanPage && <BottomNav />}
     </div>
   );
 }
